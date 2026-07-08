@@ -45,8 +45,17 @@ let cache: Cache = {
 
 const server = serve({
   routes: {
-    // Serve index.html for all unmatched routes.
     "/*": index,
+
+    "/images/*": {
+      async GET(req) {
+        return new Response(Bun.file("src/images/" + req.url.split("/").pop()), {
+          headers: {
+            "Content-Type": "image/png",
+          },
+        });
+      },
+    },
 
     "/api/buses": {
       async GET(req) {
@@ -139,3 +148,4 @@ async function fetchFromBusIdList(busIds: string[]) {
 }
 
 console.log(`🚀 Server running at ${server.url}`);
+
