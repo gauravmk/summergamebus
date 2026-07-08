@@ -11,6 +11,7 @@ import { useState } from 'react';
 import type { Bus, BusCoordinates } from './Bus';
 
 const ANN_ARBOR_COORDS: LatLngTuple = [42.276837, -83.733089];
+const INITIAL_ZOOM = 12;
 const queryClient = new QueryClient()
 
 export function App() {
@@ -50,7 +51,7 @@ function BusTracker() {
           <img width="24px" height="24px" src="images/question.png" />
         </div>
       </div>
-      <MapContainer center={ANN_ARBOR_COORDS} zoom={13} style={{ height: '85vh' }}>
+      <MapContainer center={ANN_ARBOR_COORDS} zoom={INITIAL_ZOOM} style={{ height: '85vh' }}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Markers buses={data} />
       </MapContainer>
@@ -84,7 +85,7 @@ function InfoModal({ onClose }: { onClose: () => void }) {
 
 function Markers({ buses }: { buses: BusCoordinates }) {
   const { outside, inside, both } = buses ?? {};
-  const [zoomLevel, setZoomLevel] = useState(13)
+  const [zoomLevel, setZoomLevel] = useState(INITIAL_ZOOM)
   useMapEvents({
     zoom: (e) => {
       setZoomLevel(e.target.getZoom())
