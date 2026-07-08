@@ -1,4 +1,4 @@
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, useMapEvents, Popup } from 'react-leaflet';
 import { Icon, type LatLngTuple } from 'leaflet';
 import insidePng from './images/inside.png';
 import outsidePng from './images/outside.png';
@@ -8,6 +8,7 @@ import "./index.css";
 import "leaflet/dist/leaflet.css";
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import type { Bus, BusCoordinates } from './Bus';
 
 const ANN_ARBOR_COORDS: LatLngTuple = [42.276837, -83.733089];
 const queryClient = new QueryClient()
@@ -21,7 +22,8 @@ export function App() {
 }
 
 function BusTracker() {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<BusCoordinates>({
+    refetchInterval: 3000,
     queryKey: ['bus-coords'],
     queryFn: () => fetch('/api/buses').then(res => res.json()),
   });
@@ -34,6 +36,10 @@ function BusTracker() {
     return <div>Error: {error.message}</div>;
   }
 
+  if (!data) {
+    return <div>No data</div>;
+  }
+
   return (
     <div>
       <div style={{ height: '10vh', display: 'flex', alignItems: 'center', paddingLeft: '16px' }}>
@@ -42,16 +48,15 @@ function BusTracker() {
       <MapContainer center={ANN_ARBOR_COORDS} zoom={13} style={{ height: '90vh' }}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Markers buses={data} />
-
       </MapContainer>
     </div>
   );
 }
 
-function Markers({ buses }: { buses: any }) {
+function Markers({ buses }: { buses: BusCoordinates }) {
   const { outside, inside, both } = buses ?? {};
   const [zoomLevel, setZoomLevel] = useState(13)
-  const map = useMapEvents({
+  useMapEvents({
     zoom: (e) => {
       setZoomLevel(e.target.getZoom())
     }
@@ -60,14 +65,26 @@ function Markers({ buses }: { buses: any }) {
   return (
     <>
       {outside.map((bus) => (
-        <Marker key={bus.id} position={[bus.lat, bus.lon]} icon={getIcon("outside", zoomLevel)} />
+        <BusMarker key={bus.id} bus={bus} type="outside" zoomLevel={zoomLevel} />
       ))}
       {inside.map((bus) => (
-        <Marker key={bus.id} position={[bus.lat, bus.lon]} icon={getIcon("inside", zoomLevel)} />
+        <BusMarker key={bus.id} bus={bus} type="inside" zoomLevel={zoomLevel} />
       ))}
       {both.map((bus) => (
-        <Marker key={bus.id} position={[bus.lat, bus.lon]} icon={getIcon("both", zoomLevel)} />
+        <BusMarker key={bus.id} bus={bus} type="both" zoomLevel={zoomLevel} />
       ))}</>
+  )
+}
+
+function BusMarker({ bus, type, zoomLevel }: { bus: Bus, type: "inside" | "outside" | "both", zoomLevel: number }) {
+  return (
+    <Marker key={bus.id} position={[bus.lat, bus.lon]} icon={getIcon(type, zoomLevel)} >
+      <Popup>
+        {
+          bus.direction === "Not In Service" ? <div>Sleeping. Please do not disturb ❤️</div> : <div>Route {bus.routeNum} {bus.direction}</div>
+        }
+      </Popup>
+    </Marker>
   )
 }
 

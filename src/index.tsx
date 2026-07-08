@@ -2,6 +2,7 @@ import { serve } from "bun";
 import index from "./index.html";
 import chunk from "lodash/chunk";
 import { isArray } from "lodash";
+import type { Bus, BusCoordinates } from "./Bus";
 
 const OUTSIDE_BUS_IDS = [
   "493",
@@ -28,6 +29,20 @@ const BOTH_BUS_IDS = [
   "487"
 ]
 
+type Cache = {
+  buses: BusCoordinates;
+  lastRefreshed: Date;
+}
+
+let cache: Cache = {
+  buses: {
+    outside: [],
+    inside: [],
+    both: [],
+  },
+  lastRefreshed: new Date(0)
+};
+
 const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
@@ -36,7 +51,7 @@ const server = serve({
     "/api/buses": {
       async GET(req) {
         // Fetch bus coordinates
-        const buses = await fetchBusCoordinates();
+        const buses = await getBusInfo();
         return new Response(JSON.stringify(buses), {
           headers: {
             "Content-Type": "application/json",
@@ -57,7 +72,18 @@ const server = serve({
   port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
 });
 
-async function fetchBusCoordinates() {
+async function getBusInfo(): Promise<BusCoordinates> {
+  const cacheValid = cache.lastRefreshed.getTime() > Date.now() - 3000;
+  if (cacheValid) {
+    return cache.buses;
+  }
+  const buses = await fetchBusInfo();
+  cache.buses = buses;
+  cache.lastRefreshed = new Date();
+  return buses;
+}
+
+async function fetchBusInfo() {
   const outsideBuses = await fetchFromBusIdList(OUTSIDE_BUS_IDS);
   const insideBuses = await fetchFromBusIdList(INSIDE_BUS_IDS);
   const bothBuses = await fetchFromBusIdList(BOTH_BUS_IDS);
@@ -69,8 +95,16 @@ async function fetchBusCoordinates() {
   };
 }
 
+type Vehicle = {
+  vid: string;
+  lat: number;
+  lon: number;
+  rt: string;
+  rtdir: string;
+}
+
 async function fetchFromBusIdList(busIds: string[]) {
-  const buses = [];
+  const buses: Bus[] = [];
   const busIdChunks = chunk(busIds, 10);
   for (const chunk of busIdChunks) {
     console.log(`Fetching chunk ${chunk.join(",")}`);
@@ -81,17 +115,20 @@ async function fetchFromBusIdList(busIds: string[]) {
       });
       const response = await fetch(`https://www.theride.org/api/ServiceData?${searchParams.toString()}`, {
         method: "GET",
+        signal: AbortSignal.timeout(2000),
       });
       const json = await response.json();
-      let vehicles = json["bustime-response"]["vehicle"];
+      let vehicles = json["bustime-response"]["vehicle"] as Vehicle[];
       if (!isArray(vehicles)) {
         vehicles = [vehicles];
       }
 
-      buses.push(...vehicles.map((v: any) => ({
+      buses.push(...vehicles.map((v: Vehicle) => ({
         id: v.vid,
         lat: v.lat,
         lon: v.lon,
+        routeNum: v.rt,
+        direction: v.rtdir,
       })));
     } catch (error) {
       console.error(`Error fetching chunk ${chunk.join(",")}: ${error}`);
