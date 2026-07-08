@@ -55,7 +55,8 @@ function BusTracker() {
         <Markers buses={data} />
       </MapContainer>
       <div style={{ height: '5vh', display: 'flex', alignItems: 'center', paddingLeft: '16px' }} className="text-xs text-gray-500">
-        This is an independent project by Gaurav Kulkarni, with help from friends. We are not affiliated with either the Ann Arbor District Library, or the Ann Arbor Area Transportation Authority. We just think they're really cool.
+        <div className='hidden md:block'>This is an independent project by Gaurav Kulkarni, with help from friends. We are not affiliated with either the Ann Arbor District Library, or the Ann Arbor Area Transportation Authority. We just think they're really cool.</div>
+        <div className='block md:hidden'>This is an independent project, and unaffiliated with either the Ann Arbor District Library, or the Ann Arbor Area Transportation Authority.</div>
       </div>
     </div>
   );

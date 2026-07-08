@@ -86,22 +86,25 @@ async function getBusInfo(): Promise<BusCoordinates> {
   if (cacheValid) {
     return cache.buses;
   }
-  const buses = await fetchBusInfo();
-  cache.buses = buses;
-  cache.lastRefreshed = new Date();
-  return buses;
+  return await fetchBusInfo();
 }
 
-async function fetchBusInfo() {
+async function fetchBusInfo(): Promise<BusCoordinates> {
   const outsideBuses = await fetchFromBusIdList(OUTSIDE_BUS_IDS);
   const insideBuses = await fetchFromBusIdList(INSIDE_BUS_IDS);
   const bothBuses = await fetchFromBusIdList(BOTH_BUS_IDS);
 
-  return {
-    outside: outsideBuses,
-    inside: insideBuses,
-    both: bothBuses,
-  };
+  if (outsideBuses != undefined) {
+    cache.buses.outside = outsideBuses;
+  }
+  if (insideBuses != undefined) {
+    cache.buses.inside = insideBuses;
+  }
+  if (bothBuses != undefined) {
+    cache.buses.both = bothBuses;
+  }
+  cache.lastRefreshed = new Date();
+  return cache.buses;
 }
 
 type Vehicle = {
@@ -112,7 +115,7 @@ type Vehicle = {
   rtdir: string;
 }
 
-async function fetchFromBusIdList(busIds: string[]) {
+async function fetchFromBusIdList(busIds: string[]): Promise<Bus[] | undefined> {
   const buses: Bus[] = [];
   const busIdChunks = chunk(busIds, 10);
   for (const chunk of busIdChunks) {
@@ -141,6 +144,7 @@ async function fetchFromBusIdList(busIds: string[]) {
       })));
     } catch (error) {
       console.error(`Error fetching chunk ${chunk.join(",")}: ${error}`);
+      return undefined;
     }
   }
 
