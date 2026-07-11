@@ -103,7 +103,7 @@ function BusMarker({ bus, zoomLevel }: { bus: Bus, zoomLevel: number }) {
     <Marker key={bus.id} position={[bus.lat, bus.lon]} icon={getIcon(zoomLevel)} >
       <Popup>
         {
-          bus.direction === "Not In Service" ? <div>Sleeping. Please do not disturb ❤️</div> : <div>Route {bus.routeNum} {bus.direction}</div>
+          bus.direction === "Not In Service" || bus.routeNum === 'U' ? <div>Sleeping. Please do not disturb ❤️</div> : <div>Route {bus.routeNum} {bus.direction}</div>
         }
       </Popup>
     </Marker>
