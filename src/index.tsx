@@ -79,7 +79,7 @@ async function getBusInfo(): Promise<Bus[]> {
     return cache.buses;
   }
 
-  return [];
+  return cache.buses;
 }
 
 type Vehicle = {
