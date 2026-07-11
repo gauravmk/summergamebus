@@ -1,14 +1,12 @@
 import { MapContainer, Marker, TileLayer, useMapEvents, Popup } from 'react-leaflet';
 import { Icon, type LatLngTuple } from 'leaflet';
-import insidePng from './images/inside.png';
-import outsidePng from './images/outside.png';
-import bothPng from './images/both.png';
+import badgePng from './images/badge.png';
 
 import "./index.css";
 import "leaflet/dist/leaflet.css";
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import type { Bus, BusCoordinates } from './Bus';
+import type { Bus } from './Bus';
 
 const ANN_ARBOR_COORDS: LatLngTuple = [42.276837, -83.733089];
 const INITIAL_ZOOM = 12;
@@ -24,7 +22,7 @@ export function App() {
 
 function BusTracker() {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const { data, isLoading, error } = useQuery<BusCoordinates>({
+  const { data, isLoading, error } = useQuery<Bus[]>({
     refetchInterval: 3000,
     queryKey: ['bus-coords'],
     queryFn: () => fetch('/api/buses').then(res => res.json()),
@@ -69,7 +67,7 @@ function InfoModal({ onClose }: { onClose: () => void }) {
       <div className="absolute top-0 left-0 w-full h-full bg-black opacity-70" onClick={onClose}></div>
       <div className="bg-white p-4 rounded-lg z-6001 max-w-5/6 max-h-5/6 overflow-y-auto w-3xl">
         <h2 className="text-2xl font-bold mb-4">About the Summer Game Bus Tracker</h2>
-        <p className="mb-4 text-sm">This is a map of buses that are carrying summer game codes. We've separately marked which buses have outside codes (aka a banner on the side of the bus) and those with inside codes (check the advertisements above the seats near the back of the bus).</p>
+        <p className="mb-4 text-sm">This is a map of buses that are carrying summer game codes with their real-time location. The map continuously updates as the buses move.</p>
         <p className="mb-4 text-sm">You can click or tap on any marker to get additional information, like what route the bus is on and what direction it's going.</p>
         <p className="mb-4 text-sm">As a reminder, the bus is free on the weekends if you show your AADL library card.</p>
         <h2 className="text-lg font-bold mb-2">How it works</h2>
@@ -83,8 +81,7 @@ function InfoModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-function Markers({ buses }: { buses: BusCoordinates }) {
-  const { outside, inside, both } = buses ?? {};
+function Markers({ buses }: { buses: Bus[] }) {
   const [zoomLevel, setZoomLevel] = useState(INITIAL_ZOOM)
   useMapEvents({
     zoom: (e) => {
@@ -94,21 +91,16 @@ function Markers({ buses }: { buses: BusCoordinates }) {
 
   return (
     <>
-      {outside.map((bus) => (
-        <BusMarker key={bus.id} bus={bus} type="outside" zoomLevel={zoomLevel} />
+      {buses.map((bus) => (
+        <BusMarker key={bus.id} bus={bus} zoomLevel={zoomLevel} />
       ))}
-      {inside.map((bus) => (
-        <BusMarker key={bus.id} bus={bus} type="inside" zoomLevel={zoomLevel} />
-      ))}
-      {both.map((bus) => (
-        <BusMarker key={bus.id} bus={bus} type="both" zoomLevel={zoomLevel} />
-      ))}</>
+    </>
   )
 }
 
-function BusMarker({ bus, type, zoomLevel }: { bus: Bus, type: "inside" | "outside" | "both", zoomLevel: number }) {
+function BusMarker({ bus, zoomLevel }: { bus: Bus, zoomLevel: number }) {
   return (
-    <Marker key={bus.id} position={[bus.lat, bus.lon]} icon={getIcon(type, zoomLevel)} >
+    <Marker key={bus.id} position={[bus.lat, bus.lon]} icon={getIcon(zoomLevel)} >
       <Popup>
         {
           bus.direction === "Not In Service" ? <div>Sleeping. Please do not disturb ❤️</div> : <div>Route {bus.routeNum} {bus.direction}</div>
@@ -118,13 +110,10 @@ function BusMarker({ bus, type, zoomLevel }: { bus: Bus, type: "inside" | "outsi
   )
 }
 
-function getIcon(type: "inside" | "outside" | "both", zoomLevel: number) {
-  const png = type === "inside" ? insidePng : type === "outside" ? outsidePng : bothPng;
-
+function getIcon(zoomLevel: number) {
   const baseSize = zoomLevel < 15 ? 64 : 90;
-
   return new Icon({
-    iconUrl: png,
+    iconUrl: badgePng,
     iconSize: [baseSize, baseSize],       // adjust to your image size
     iconAnchor: [baseSize / 2, baseSize],     // tip of the marker (center-bottom)
     popupAnchor: [0, -baseSize],

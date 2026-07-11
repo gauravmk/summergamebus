@@ -5,9 +5,3 @@ export type Bus = {
     routeNum: string;
     direction: string;
 }
-
-export type BusCoordinates = {
-    outside: Bus[];
-    inside: Bus[];
-    both: Bus[];
-}

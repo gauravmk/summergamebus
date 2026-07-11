@@ -2,10 +2,11 @@ import { serve } from "bun";
 import index from "./index.html";
 import chunk from "lodash/chunk";
 import { isArray } from "lodash";
-import type { Bus, BusCoordinates } from "./Bus";
+import type { Bus } from "./Bus";
 
-const OUTSIDE_BUS_IDS = [
+const BUS_IDS = [
   "493",
+  "487",
   "497",
   "507",
   "516",
@@ -17,29 +18,13 @@ const OUTSIDE_BUS_IDS = [
   "1935",
 ]
 
-const INSIDE_BUS_IDS = [
-  "542",
-  "549",
-  "557",
-  "562",
-  "2002",
-]
-
-const BOTH_BUS_IDS = [
-  "487"
-]
-
 type Cache = {
-  buses: BusCoordinates;
+  buses: Bus[];
   lastRefreshed: Date;
 }
 
 let cache: Cache = {
-  buses: {
-    outside: [],
-    inside: [],
-    both: [],
-  },
+  buses: [],
   lastRefreshed: new Date(0)
 };
 
@@ -81,30 +66,20 @@ const server = serve({
   port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
 });
 
-async function getBusInfo(): Promise<BusCoordinates> {
+async function getBusInfo(): Promise<Bus[]> {
   const cacheValid = cache.lastRefreshed.getTime() > Date.now() - 3000;
   if (cacheValid) {
     return cache.buses;
   }
-  return await fetchBusInfo();
-}
 
-async function fetchBusInfo(): Promise<BusCoordinates> {
-  const outsideBuses = await fetchFromBusIdList(OUTSIDE_BUS_IDS);
-  const insideBuses = await fetchFromBusIdList(INSIDE_BUS_IDS);
-  const bothBuses = await fetchFromBusIdList(BOTH_BUS_IDS);
+  const results = await fetchFromBusIdList(BUS_IDS);
+  if (results != undefined) {
+    cache.buses = results;
+    cache.lastRefreshed = new Date();
+    return cache.buses;
+  }
 
-  if (outsideBuses != undefined) {
-    cache.buses.outside = outsideBuses;
-  }
-  if (insideBuses != undefined) {
-    cache.buses.inside = insideBuses;
-  }
-  if (bothBuses != undefined) {
-    cache.buses.both = bothBuses;
-  }
-  cache.lastRefreshed = new Date();
-  return cache.buses;
+  return [];
 }
 
 type Vehicle = {
