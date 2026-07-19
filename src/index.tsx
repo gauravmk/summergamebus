@@ -92,7 +92,7 @@ type Vehicle = {
 
 async function fetchFromBusIdList(busIds: string[]): Promise<Bus[] | undefined> {
   const buses: Bus[] = [];
-  const busIdChunks = chunk(busIds, 10);
+  const busIdChunks = chunk(busIds, 8);
   for (const chunk of busIdChunks) {
     console.log(`Fetching chunk ${chunk.join(",")}`);
     try {
@@ -119,7 +119,6 @@ async function fetchFromBusIdList(busIds: string[]): Promise<Bus[] | undefined> 
       })));
     } catch (error) {
       console.error(`Error fetching chunk ${chunk.join(",")}: ${error}`);
-      return undefined;
     }
   }
 
