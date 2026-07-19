@@ -65,7 +65,7 @@ function InfoModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-6000" onClick={onClose}>
       <div className="absolute top-0 left-0 w-full h-full bg-black opacity-70" onClick={onClose}></div>
-      <div className="bg-white p-4 rounded-lg z-6001 max-w-5/6 max-h-5/6 overflow-y-auto w-3xl">
+      <div className="bg-white p-4 rounded-lg z-6001 max-w-5/6 max-h-5/6 overflow-y-auto w-3xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-2xl font-bold mb-4">About the Summer Game Bus Tracker</h2>
         <p className="mb-4 text-sm">This is a map of buses that are carrying summer game codes with their real-time location. The map continuously updates as the buses move.</p>
         <p className="mb-4 text-sm">You can click or tap on any marker to get additional information, like what route the bus is on and what direction it's going.</p>
